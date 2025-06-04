@@ -99,6 +99,7 @@ exports.joinTournament = async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Join tournament error:', error);
+    
     res.status(500).json({ error: 'Internal server error' });
   }
 };

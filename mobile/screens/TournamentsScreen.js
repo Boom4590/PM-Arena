@@ -1,5 +1,14 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import React, { useState, useContext, useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Alert
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { UserContext } from '../UserContext';
 
 const BACKEND_URL = 'http://localhost:3000';
@@ -8,6 +17,8 @@ export default function Tournaments({ navigation }) {
   const { userInfo } = useContext(UserContext);
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState(null);
 
   async function fetchTournaments() {
     setLoading(true);
@@ -34,52 +45,56 @@ export default function Tournaments({ navigation }) {
         },
       ]);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось загрузить турниры');
+      console.log('Ошибка при загрузке турниров');
     } finally {
       setLoading(false);
     }
   }
 
-  async function joinTournament(tournament_id, entry_fee) {
-    if (!userInfo) {
-      Alert.alert('Ошибка', 'Вы не вошли в систему');
-      return;
-    }
+  async function confirmJoin() {
+    if (!selectedTournament || !userInfo) return;
+
+    const { id, entry_fee } = selectedTournament;
 
     if (userInfo.balance < entry_fee) {
-      Alert.alert('Ошибка', 'Недостаточно средств для участия');
-      return;
+      setConfirmVisible(false);
+      return Alert.alert('Ошибка', 'Недостаточно средств для участия');
     }
 
     try {
-      const pubg_id = userInfo.pubg_id;
       const res = await fetch(`${BACKEND_URL}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pubg_id, tournament_id }),
+        body: JSON.stringify({ pubg_id: userInfo.pubg_id, tournament_id: id }),
       });
 
+      const json = await res.json();
       if (!res.ok) {
-        const json = await res.json();
         Alert.alert('Ошибка', json.error || 'Не удалось присоединиться');
+        setConfirmVisible(false);
         return;
       }
 
-      Alert.alert('Успешно', 'Вы зарегистрированы на турнир');
-      setTournaments(prev =>
-        prev.map(t =>
-          t.id === tournament_id ? { ...t, isParticipating: true } : t
-        )
-      );
+      // Успешно
+      await fetchTournaments();
+      setConfirmVisible(false);
       navigation.navigate('Current');
     } catch {
       Alert.alert('Ошибка', 'Ошибка подключения к серверу');
+      setConfirmVisible(false);
     }
   }
 
-  useEffect(() => {
-    fetchTournaments();
-  }, []);
+  function handleJoinPress(tournament) {
+    setSelectedTournament(tournament);
+    setConfirmVisible(true);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTournaments();
+    }, [userInfo])
+  );
 
   function renderItem({ item }) {
     const isFull = item.participants_count >= 100;
@@ -108,7 +123,7 @@ export default function Tournaments({ navigation }) {
 
         <TouchableOpacity
           disabled={item.isFake || disabled}
-          onPress={() => !item.isFake && joinTournament(item.id, item.entry_fee)}
+          onPress={() => !item.isFake && handleJoinPress(item)}
           style={[
             styles.button,
             (item.isFake || disabled) && styles.buttonDisabled,
@@ -131,6 +146,36 @@ export default function Tournaments({ navigation }) {
         keyExtractor={item => String(item.id)}
         renderItem={renderItem}
       />
+
+      {/* Подтверждение участия */}
+      <Modal
+        visible={confirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>
+              Подтвердить участие в турнире #{selectedTournament?.id} за {selectedTournament?.entry_fee} $?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#d1d5db' }]}
+                onPress={() => setConfirmVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#2563eb' }]}
+                onPress={confirmJoin}
+              >
+                <Text style={styles.modalButtonText}>Подтвердить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -192,5 +237,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     color: '#6b7280',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 8,
+    elevation: 5,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#111827',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });

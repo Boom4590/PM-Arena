@@ -46,6 +46,25 @@ router.post('/admin/archiveParticipants', async (req, res) => {
     res.status(500).json({ error: 'Ошибка подключения к базе' });
   }
 });
+router.get('/user', async (req, res) => {
+  const pubg_id = req.query.pubg_id;
+  if (!pubg_id) {
+    return res.status(400).json({ error: 'pubg_id обязателен' });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE pubg_id = $1', [pubg_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Ошибка при запросе пользователя:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 router.delete('/admin/delete/:id', async (req, res) => {
   const tournamentId = parseInt(req.params.id, 10);
   if (isNaN(tournamentId)) {
@@ -53,7 +72,7 @@ router.delete('/admin/delete/:id', async (req, res) => {
   }
 
   try {
-    const result = await pool.query('DELETE FROM tournaments WHERE tournament_id = $1', [tournamentId]);
+    const result = await pool.query('DELETE FROM tournaments WHERE id = $1', [tournamentId]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Турнир не найден' });

@@ -1,4 +1,7 @@
 import React, { useState, useContext } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
 import {
   View,
   Text,
@@ -21,8 +24,16 @@ export default function Profile({ openAdminPanel }) {
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminInput, setShowAdminInput] = useState(false);
 
+  useFocusEffect(
+  useCallback(() => {
+    if (userInfo?.pubg_id) {
+      fetchLatestUserData();
+    }
+  }, [userInfo?.pubg_id])
+);
+
   const logout = async () => {
-    await AsyncStorage.removeItem('user');
+    
     setUserInfo(null);
   };
 
@@ -52,6 +63,20 @@ export default function Profile({ openAdminPanel }) {
       Alert.alert('Ошибка', 'Ошибка сервера');
     }
   }
+async function fetchLatestUserData() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/user?pubg_id=${userInfo.pubg_id}`);
+    if (!res.ok) {
+      console.log('Ошибка при получении данных пользователя');
+      return;
+    }
+    const updatedUser = await res.json();
+    await AsyncStorage.setItem('userInfo', JSON.stringify(updatedUser));
+    setUserInfo(updatedUser);
+  } catch (error) {
+    console.log('Ошибка сервера:', error);
+  }
+}
 
   function tryAdminLogin() {
     if (adminPassword === 'm') {
@@ -196,9 +221,9 @@ const styles = StyleSheet.create({
   },
   balanceRow: {
     backgroundColor: '#ECEFF1',
-    borderRadius: 10,
-    width:'50%',
-    padding: 12,
+    borderRadius: 6,
+    width:'60%',
+    padding: 10,
     alignItems: 'center',
     marginBottom: 20,
   },
