@@ -11,11 +11,7 @@ router.post('/current', ctrl.getCurrentTournament);
 router.post('/topup', ctrl.topUp);
 router.post('/admin/block', ctrl.blockUser);
 router.post('/admin/create', ctrl.createTournament);
-router.post('/test', (req, res) => {
-  res.json({ message: 'Test route is working!' });
-});
-
-router.post('/admin/lobby', ctrl.sendLobby);
+router.post('/admin/send_lobby', ctrl.sendLobby);
 router.post('/admin/archiveParticipants', async (req, res) => {
   try {
     const client = await pool.connect();

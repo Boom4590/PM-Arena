@@ -107,17 +107,21 @@ exports.joinTournament = async (req, res) => {
 exports.getCurrentTournament = async (req, res) => {
   try {
     const { pubg_id } = req.body;
-     const result = await pool.query(
-      `SELECT tournaments.*, participants.seat 
-FROM participants
-JOIN tournaments ON tournaments.id = participants.tournament_id
-WHERE participants.pubg_id = $1
-ORDER BY tournaments.start_time DESC
-LIMIT 1;`,
+    const result = await pool.query(
+      `SELECT tournaments.*, participants.seat, participants.room_id, participants.room_password
+       FROM participants
+       JOIN tournaments ON tournaments.id = participants.tournament_id
+       WHERE participants.pubg_id = $1
+       ORDER BY tournaments.start_time DESC
+       LIMIT 1;`,
       [pubg_id]
     );
+
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Нет текущего турнира' });
+      // Возвращаем успешный ответ, но с пустым объектом или null
+      return res.json(null); 
+      // Или, если удобнее, можно вернуть { currentTournament: null }
+      // return res.json({ currentTournament: null });
     }
 
     res.json(result.rows[0]);
@@ -193,15 +197,25 @@ exports.createTournament = async (req, res) => {
 };
 
 exports.sendLobby = async (req, res) => {
+  const { tournament_id, room_id, room_password } = req.body;
+
+  console.log('Получены данные для лобби:', { tournament_id, room_id, room_password });
+
+  if (!tournament_id || !room_id || !room_password) {
+    return res.status(400).json({ error: 'Заполните все поля' });
+  }
+
   try {
-    const { tournament_id, room_id, password } = req.body;
-    await pool.query(
-      'UPDATE tournaments SET room_id = $1, room_password = $2 WHERE id = $3',
-      [room_id, password, tournament_id]
+    const result = await pool.query(
+      `UPDATE participants SET room_id = $1, room_password = $2 WHERE tournament_id = $3`,
+      [room_id, room_password, tournament_id]
     );
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Send lobby error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    console.log('Результат обновления участников:', result);
+
+    res.json({ message: 'Данные лобби обновлены у участников' });
+  } catch (err) {
+    console.error('Ошибка при обновлении лобби:', err);
+    res.status(500).json({ error: 'Ошибка сервера при обновлении лобби' });
   }
 };

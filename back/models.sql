@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
 
 -- Participants
 CREATE TABLE IF NOT EXISTS participants (
-  id SERIAL PRIMARY KEY,
+  seat SERIAL PRIMARY KEY,
   tournament_id INTEGER REFERENCES tournaments(id),
   pubg_id INTEGER UNIQUE REFERENCES users(pubg_id) 
 );

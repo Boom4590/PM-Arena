@@ -121,6 +121,7 @@ export default function AdminPanel({ user, onClose }) {
       Alert.alert('Ошибка', 'Заполните все поля для отправки лобби');
       return;
     }
+    console.log(lobbyTournamentId,lobbyRoomId,lobbyPassword)
     try {
       const res = await fetch(`${BACKEND_URL}/admin/send_lobby`, {
         method: 'POST',
@@ -153,7 +154,7 @@ export default function AdminPanel({ user, onClose }) {
     <ScrollView style={styles.container}>
       {/* Аккордеон: Заголовок и тело */}
       <TouchableOpacity onPress={() => toggleSection('block')} style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Блокировка пользователя по телефону</Text>
+        <Text style={styles.sectionTitle}>Блокировка пользователя по ID</Text>
       </TouchableOpacity>
       {activeSection === 'block' && (
         <View>
