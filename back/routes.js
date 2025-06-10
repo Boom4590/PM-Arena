@@ -12,6 +12,11 @@ router.post('/topup', ctrl.topUp);
 router.post('/admin/block', ctrl.blockUser);
 router.post('/admin/create', ctrl.createTournament);
 router.post('/admin/send_lobby', ctrl.sendLobby);
+router.post('/api/payment/create', ctrl.createPay)
+router.post('/api/payment/callback', ctrl.payment)
+router.post('/api/payment/test-callback', ctrl.payment)
+
+
 router.post('/admin/archiveParticipants', async (req, res) => {
   try {
     const client = await pool.connect();

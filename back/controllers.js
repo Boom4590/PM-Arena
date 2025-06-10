@@ -1,4 +1,6 @@
 const pool = require('./db');
+const router = require('./routes');
+const axios = require('axios');
 
 exports.register = async (req, res) => {
   try {
@@ -217,5 +219,77 @@ exports.sendLobby = async (req, res) => {
   } catch (err) {
     console.error('Ошибка при обновлении лобби:', err);
     res.status(500).json({ error: 'Ошибка сервера при обновлении лобби' });
+  }
+};
+
+exports.payment = async (req, res) => {
+  const data = req.body;
+
+  console.log('Получен callback:', data);
+
+  if (data.payment_status === 'finished') {
+    const orderId = data.order_id;  // user-12345-123456789
+    const parts = orderId.split('-');
+    const pubg_id = parts[1];
+    const amountUsd = parseFloat(data.price_amount);
+
+    try {
+      // Получим текущий баланс
+      const { rows } = await pool.query('SELECT balance FROM users WHERE pubg_id = $1', [pubg_id]);
+
+      if (rows.length === 0) {
+        console.warn(`Пользователь с pubg_id=${pubg_id} не найден`);
+        return res.sendStatus(404);
+      }
+
+      const currentBalance = parseFloat(rows[0].balance) || 0;
+      const newBalance = currentBalance + amountUsd;
+
+      // Обновим баланс
+      await pool.query('UPDATE users SET balance = $1 WHERE pubg_id = $2', [newBalance, pubg_id]);
+
+      console.log(`Баланс пользователя ${pubg_id} обновлён: ${currentBalance} ➝ ${newBalance}`);
+    } catch (err) {
+      console.error('Ошибка при обновлении баланса:', err);
+      return res.sendStatus(500);
+    }
+  }
+
+  res.sendStatus(200);
+};
+
+
+const NOWPAYMENTS_API_KEY = '4C7RVAX-5HH44WP-QK4P5X1-XWD2ZGK';
+
+// 1. Создать платеж (запрос с фронта)
+exports.createPay = async (req, res) => {
+  const { amountUsd, payCurrency, pubg_id } = req.body;
+
+  if (!amountUsd || !payCurrency || !pubg_id) {
+    return res.status(400).json({ error: 'Не хватает данных' });
+  }
+
+  try {
+    const data = {
+      price_amount: amountUsd,
+      price_currency: "usd",
+      pay_currency: payCurrency,
+      order_id: `pubg_id:${pubg_id}-${Date.now()}`,  // уникальный ID заказа
+      order_description: `Пополнение баланса пользователя ${pubg_id}`,
+      ipn_callback_url: "https://0ac6-212-97-4-80.ngrok-free.app/api/payment/callback"
+    };
+
+    const response = await axios.post('https://api.nowpayments.io/v1/invoice', data, {
+      headers: {
+        'x-api-key': NOWPAYMENTS_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.json(response.data);  // вернём объект с payment_url и другими данными
+
+  } catch (error) {
+    console.error('Ошибка создания платежа:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Ошибка при создании платежа' });
   }
 };

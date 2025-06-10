@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'http://192.168.0.110:3000';
 
 export default function AdminPanel({ user, onClose }) {
   const [activeSection, setActiveSection] = useState(null); // null или 'block', 'create', 'lobby', 'delete', 'archive'

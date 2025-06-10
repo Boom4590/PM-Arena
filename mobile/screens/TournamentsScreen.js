@@ -11,7 +11,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { UserContext } from '../UserContext';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'http://192.168.0.110:3000';
 
 export default function Tournaments({ navigation }) {
   const { userInfo } = useContext(UserContext);
@@ -45,7 +45,7 @@ export default function Tournaments({ navigation }) {
         },
       ]);
     } catch {
-      console.log('Ошибка при загрузке турниров');
+      console.log('Ошибка при загрузке турниров',error);
     } finally {
       setLoading(false);
     }

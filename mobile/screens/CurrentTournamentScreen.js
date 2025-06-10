@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { UserContext } from '../UserContext';
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import { TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'http://192.168.0.110:3000';
 
 export default function CurrentTournament() {
   const { userInfo } = useContext(UserContext);
@@ -19,10 +19,13 @@ export default function CurrentTournament() {
   const pollingRef = useRef(null);
   const lobbyTimerRef = useRef(null);
 
-  function copyToClipboard(text) {
-    Clipboard.setString(text);
-    Alert.alert('Скопировано в буфер обмена', text);
-  }
+  
+
+
+function copyToClipboard(text) {
+  Clipboard.setStringAsync(text);
+  
+}
 
   async function fetchCurrentTournament() {
     try {

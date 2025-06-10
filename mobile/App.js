@@ -5,7 +5,7 @@ import { enableScreens } from 'react-native-screens';
 enableScreens(true);
 
 import { UserProvider, UserContext } from './UserContext';
-
+import CryptoPaymentScreen from './screens/CryptoPaymentScreen';
 import AuthScreen from './screens/AuthScreen';
 import Tournaments from './screens/TournamentsScreen';
 import CurrentTournament from './screens/CurrentTournamentScreen';
@@ -102,6 +102,7 @@ function MainApp() {
           component={AdminPanel}
           initialParams={{ user: userInfo }}
         />
+        <Stack.Screen name="CryptoPayment" component={CryptoPaymentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
