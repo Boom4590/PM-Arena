@@ -1,6 +1,21 @@
 const pool = require('./db');
-const router = require('./routes');
+
 const axios = require('axios');
+
+exports.getPlayers = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT pubg_id, seat, nickname FROM participants');
+    const players = result.rows.map(row => ({
+      id: row.pubg_id,
+      slot: row.seat,
+      nickname: row.nickname
+    }));
+    res.status(200).json(players);
+  } catch (err) {
+    console.error('Ошибка при получении игроков:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+};
 
 exports.register = async (req, res) => {
   try {

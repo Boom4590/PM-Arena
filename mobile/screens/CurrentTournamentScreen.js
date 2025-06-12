@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text,Animated, StyleSheet, Alert } from 'react-native';
 import { UserContext } from '../UserContext';
 import * as Clipboard from 'expo-clipboard';
 import { TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const BACKEND_URL = 'http://192.168.0.110:3000';
 
@@ -14,7 +15,7 @@ export default function CurrentTournament() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [lobbyVisible, setLobbyVisible] = useState(false);
   const [lobbyCountdown, setLobbyCountdown] = useState(null);
-
+const navigation = useNavigation()
   const timerRef = useRef(null);
   const pollingRef = useRef(null);
   const lobbyTimerRef = useRef(null);
@@ -135,7 +136,24 @@ function copyToClipboard(text) {
       clearLobbyTimer();
     }
   }
+const opacity = useRef(new Animated.Value(1)).current;
 
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
   function clearTimers() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -149,6 +167,30 @@ function copyToClipboard(text) {
       lobbyTimerRef.current = null;
     }
   }
+ const colorAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(colorAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(colorAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const interpolatedColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#1E90FF', '#00BFFF']
+ // золото → оранжевый
+  });
 
   const [startTime, setStartTime] = useState(null);
 
@@ -192,6 +234,7 @@ useEffect(() => {
 
     fetchCurrentTournament();
     pollingRef.current = setInterval(fetchCurrentTournament, 20000);
+   
 
     return () => {
       clearTimers();
@@ -199,7 +242,11 @@ useEffect(() => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [userInfo]);
-
+ const openLobby = () => {
+    navigation.navigate('Lobby', {
+    currentUserSlot: tournament.seat
+  });
+  };
   if (!tournament) {
     return (
       <View style={styles.container}>
@@ -210,7 +257,13 @@ useEffect(() => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Турнир #{tournament.id}</Text>
+      <Text style={styles.title}>Турнир #{tournament.id}
+         <TouchableOpacity
+      style={styles.rulesButton}
+      onPress={() => navigation.navigate('Instruction')}
+    >
+      <Text>ℹ️</Text>
+    </TouchableOpacity></Text>
 
       {timeLeft !== null && (
         <View style={styles.timerBox}>
@@ -230,7 +283,16 @@ useEffect(() => {
           </Text>
         </Text>
         <Text style={styles.infoText}>
-          Ваше место: <Text style={styles.infoBold}>{tournament.seat}</Text>
+          Ваше место: <Text style={styles.infoBold2}>{tournament.seat}</Text>
+            <TouchableOpacity onPress={openLobby} style={styles.infoButton}>
+          <Text style={styles.infoButtonText}>
+            
+     <Animated.Text style={[styles.text, { color: interpolatedColor }]}>
+      Посмотреть мой слот  
+    </Animated.Text>
+          </Text>
+        </TouchableOpacity>
+        
         </Text>
       </View>
 
@@ -309,6 +371,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginBottom: 16,
+
+  
     elevation: 2,
   },
   infoText: {
@@ -318,7 +382,14 @@ const styles = StyleSheet.create({
   },
   infoBold: {
     fontWeight: '600',
+    color: '#333333',
+    
+  },
+    infoBold2: {
+    fontWeight: '800',
     color: '#000',
+    width:6,
+    marginLeft:4
   },
   lobbyBox: {
     backgroundColor: '#ffffff',
@@ -384,4 +455,26 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#fff',
   },
+ infoButton: {
+  marginLeft: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: 'silver',
+}
+,
+  rulesButton: {
+    
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    marginRight: 20,
+    alignItems: 'center',
+  },
+  rulesButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize:8,
+  },
+  text:{
+fontWeight:'600'
+  }
 });

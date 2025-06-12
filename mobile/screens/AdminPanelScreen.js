@@ -6,6 +6,8 @@ const BACKEND_URL = 'http://192.168.0.110:3000';
 
 export default function AdminPanel({ user, onClose }) {
   const [activeSection, setActiveSection] = useState(null); // null или 'block', 'create', 'lobby', 'delete', 'archive'
+const [topUpPubgId, setTopUpPubgId] = useState('');
+const [topUpAmount, setTopUpAmount] = useState('');
 
   const [deleteTournamentId, setDeleteTournamentId] = useState('');
   const [blockPhone, setBlockPhone] = useState('');
@@ -17,6 +19,8 @@ export default function AdminPanel({ user, onClose }) {
   const [lobbyTournamentId, setLobbyTournamentId] = useState('');
   const [lobbyRoomId, setLobbyRoomId] = useState('');
   const [lobbyPassword, setLobbyPassword] = useState('');
+const [searchPubgId, setSearchPubgId] = useState('');
+const [foundSeat, setFoundSeat] = useState(null);
 
   async function blockUser() {
    
@@ -148,7 +152,58 @@ export default function AdminPanel({ user, onClose }) {
 
   function toggleSection(sectionName) {
     setActiveSection((prev) => (prev === sectionName ? null : sectionName));
+
   }
+  async function topUpBalance() {
+  if (!topUpPubgId.trim() || !topUpAmount.trim()) {
+    Alert.alert('Ошибка', 'Введите PUBG ID и сумму');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/topup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pubg_id: topUpPubgId,
+        amount: Number(topUpAmount),
+      }),
+    });
+
+    const json = await res.json();
+    if (res.ok) {
+      Alert.alert('Успешно', json.message || 'Баланс пополнен');
+      setTopUpPubgId('');
+      setTopUpAmount('');
+    } else {
+      Alert.alert('Ошибка', json.error || 'Не удалось пополнить баланс');
+    }
+  } catch {
+    Alert.alert('Ошибка', 'Ошибка сервера');
+  }
+}
+
+async function findSeatByPubgId() {
+  if (!searchPubgId.trim()) {
+    Alert.alert('Ошибка', 'Введите PUBG ID для поиска');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/find_seat/${searchPubgId}`);
+    const json = await res.json();
+
+    if (res.ok) {
+      setFoundSeat(json.seat); // ожидается { seat: "A3" } например
+    } else {
+      Alert.alert('Ошибка', json.error || 'Пользователь не найден');
+      setFoundSeat(null);
+    }
+  } catch {
+    Alert.alert('Ошибка', 'Ошибка сервера');
+    setFoundSeat(null);
+  }
+}
 
   return (
     <ScrollView style={styles.container}>
@@ -265,6 +320,50 @@ export default function AdminPanel({ user, onClose }) {
           <Button title="Архивировать Participants" onPress={archiveParticipants} />
         </View>
       )}
+      <TouchableOpacity onPress={() => toggleSection('findSeat')} style={styles.sectionHeader}>
+  <Text style={styles.sectionTitle}>Найти Seat по PUBG ID</Text>
+</TouchableOpacity>
+{activeSection === 'findSeat' && (
+  <View>
+    <TextInput
+      placeholder="PUBG ID"
+      value={searchPubgId}
+      onChangeText={setSearchPubgId}
+      keyboardType="number-pad"
+      style={styles.input}
+    />
+    <Button title="Найти" onPress={findSeatByPubgId} />
+    {foundSeat !== null && (
+      <Text style={{ marginTop: 10, fontSize: 16 }}>
+        Место (seat): <Text style={{ fontWeight: 'bold' }}>{foundSeat}</Text>
+      </Text>
+    )}
+  </View>
+)}
+<TouchableOpacity onPress={() => toggleSection('topup')} style={styles.sectionHeader}>
+  <Text style={styles.sectionTitle}>Пополнить баланс пользователя</Text>
+</TouchableOpacity>
+{activeSection === 'topup' && (
+  <View>
+    <TextInput
+      placeholder="PUBG ID"
+      value={topUpPubgId}
+      onChangeText={setTopUpPubgId}
+      keyboardType="numeric"
+      style={styles.input}
+    />
+    <TextInput
+      placeholder="Сумма пополнения"
+      value={topUpAmount}
+      onChangeText={setTopUpAmount}
+      keyboardType="numeric"
+      style={styles.input}
+    />
+    <Button title="Пополнить баланс" onPress={topUpBalance} />
+  </View>
+)}
+
+
     </ScrollView>
   );
 }

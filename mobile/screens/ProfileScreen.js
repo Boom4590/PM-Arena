@@ -2,6 +2,12 @@ import React, { useState, useContext } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+
+
+
+
 import {
   View,
   Text,
@@ -132,7 +138,12 @@ export default function Profile({ openAdminPanel }) {
               {userInfo.nickname}
             </Text>
             <Text style={styles.label}>
-              <Text style={styles.labelTitle}>Телефон: </Text>
+              <Text style={styles.labelTitle}>
+                <FontAwesome name="phone" size={17} color="black"  />
+                
+
+                </Text>
+                <FontAwesome name="phone" size={10} color="#fff" />
               {userInfo.phone}
             </Text>
           </View>
@@ -286,7 +297,7 @@ cryptoText: {
     width: 90,
     height: 90,
     marginRight: 18,
-    borderRadius: 45,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: 'black',
   },

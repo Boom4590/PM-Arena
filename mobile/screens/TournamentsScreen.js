@@ -36,8 +36,8 @@ export default function Tournaments({ navigation }) {
         {
           id: 24,
           mode: 'Erangel, Solo',
-          entry_fee: 500,
-          prize_pool: 45000,
+          entry_fee: 50,
+          prize_pool: 4500,
           start_time: new Date().toISOString(),
           participants_count: 0,
           isParticipating: false,
@@ -45,7 +45,7 @@ export default function Tournaments({ navigation }) {
         },
       ]);
     } catch {
-      console.log('Ошибка при загрузке турниров',error);
+      console.log('Ошибка при загрузке турниров');
     } finally {
       setLoading(false);
     }

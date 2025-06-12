@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import { enableScreens } from 'react-native-screens';
 enableScreens(true);
-
+import InstructionScreen from './screens/InstructionScreen'
 import { UserProvider, UserContext } from './UserContext';
 import CryptoPaymentScreen from './screens/CryptoPaymentScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -11,6 +11,7 @@ import Tournaments from './screens/TournamentsScreen';
 import CurrentTournament from './screens/CurrentTournamentScreen';
 import Profile from './screens/ProfileScreen';
 import AdminPanel from './screens/AdminPanelScreen';
+import LobbyScreen from './screens/LobbyScreen';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -102,7 +103,10 @@ function MainApp() {
           component={AdminPanel}
           initialParams={{ user: userInfo }}
         />
-        <Stack.Screen name="CryptoPayment" component={CryptoPaymentScreen} />
+        <Stack.Screen name="Instruction" component={InstructionScreen}  options={{ title: 'Правила турнира' }} />
+
+        <Stack.Screen name="CryptoPayment" component={CryptoPaymentScreen}  options={{ title: 'Оплата' }}/>
+         <Stack.Screen name="Lobby" component={LobbyScreen} options={{ title: 'Лобби' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

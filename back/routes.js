@@ -3,6 +3,7 @@ const router = express.Router();
 const ctrl = require('./controllers');
 const pool = require('./db');
 
+router.get('/players', ctrl.getPlayers)
 router.post('/register', ctrl.register);
 router.post('/login', ctrl.login);
 router.get('/tournaments', ctrl.getTournaments);
@@ -14,8 +15,6 @@ router.post('/admin/create', ctrl.createTournament);
 router.post('/admin/send_lobby', ctrl.sendLobby);
 router.post('/api/payment/create', ctrl.createPay)
 router.post('/api/payment/callback', ctrl.payment)
-router.post('/api/payment/test-callback', ctrl.payment)
-
 
 router.post('/admin/archiveParticipants', async (req, res) => {
   try {
@@ -86,6 +85,48 @@ router.delete('/admin/delete/:id', async (req, res) => {
   }
 });
 
+router.get('/admin/find_seat/:pubg_id', async (req, res) => {
+  const { pubg_id } = req.params;
+
+  try {
+    const query = `
+      SELECT seat FROM participants
+      WHERE pubg_id = $1
+    `;
+    const result = await pool.query(query, [pubg_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    res.json({ seat: result.rows[0].seat });
+  } catch (error) {
+    console.error('Ошибка при поиске seat:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+// Пример (Node.js + Express + PostgreSQL):
+router.post('/admin/topup', async (req, res) => {
+  const { pubg_id, amount } = req.body;
+  if (!pubg_id || !amount) {
+    return res.status(400).json({ error: 'PUBG ID и сумма обязательны' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE users SET balance = balance + $1 WHERE pubg_id = $2 RETURNING balance',
+      [amount, pubg_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    res.json({ message: 'Баланс пополнен', balance: result.rows[0].balance });
+  } catch (e) {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 
 module.exports = router;
